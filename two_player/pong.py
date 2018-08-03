@@ -114,7 +114,7 @@ class PongGame(Env):
 		pygame.draw.line(self.canvas, WHITE, [WIDTH / 2, 0],[WIDTH / 2, HEIGHT], 1)
 		pygame.draw.line(self.canvas, WHITE, [PAD_WIDTH, 0],[PAD_WIDTH, HEIGHT], 1)
 		pygame.draw.line(self.canvas, WHITE, [WIDTH - PAD_WIDTH, 0],[WIDTH - PAD_WIDTH, HEIGHT], 1)
-		pygame.draw.circle(self.canvas, WHITE, [WIDTH//2, HEIGHT//2], 70, 1)
+		# pygame.draw.circle(self.canvas, WHITE, [WIDTH//2, HEIGHT//2], 70, 1)
 
 		# update paddle's vertical position, keep paddle on the screen
 		self.paddle1.pos[1] =  min(max(HALF_PAD_HEIGHT,self.paddle1.vel+self.paddle1.pos[1]),HEIGHT-HALF_PAD_HEIGHT)
@@ -123,7 +123,7 @@ class PongGame(Env):
 		
 
 		#draw paddles and ball
-		pygame.draw.circle(self.canvas, RED, [*map(int,self.ball.pos)], BALL_RADIUS, 0)
+		pygame.draw.circle(self.canvas, WHITE, [*map(int,self.ball.pos)], BALL_RADIUS, 0)
 		pygame.draw.polygon(self.canvas, GREEN, [[self.paddle1.pos[0] - HALF_PAD_WIDTH, self.paddle1.pos[1] - HALF_PAD_HEIGHT], 
 												[self.paddle1.pos[0] - HALF_PAD_WIDTH, self.paddle1.pos[1] + HALF_PAD_HEIGHT], 
 												[self.paddle1.pos[0] + HALF_PAD_WIDTH, self.paddle1.pos[1] + HALF_PAD_HEIGHT], 

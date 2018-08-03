@@ -33,6 +33,8 @@ def parse_args():
     parser.add_argument("--data_dir", type = str,default = "./record")
     parser.add_argument("--model_save_path", type = str,default = "./tf_vae", help= "model save path")
     parser.add_argument("--z_size", type = int, default = 32, help = "z size")
+    parser.add_argument("--save_period", type = int, default = 30, help = "save every x timesteps")
+    parser.add_argument("--use_image", type = bool, default = False, help = "use image or record")
     return parser.parse_args()
 
 def count_length_of_filelist(filelist, data_dir):
@@ -48,24 +50,24 @@ def count_length_of_filelist(filelist, data_dir):
       print("loading file", i)
   return  total_length
 
-# def create_dataset(filelist,data_dir, N=10000, M=1000): # N is 10000 episodes, M is number of timesteps
-#   # data = np.zeros((M*N, 64, 64, 3), dtype=np.uint8)
-#   dataset = []
-#   for i in range(len(filelist)):
-#     filename = filelist[i]
-#     img = Image.open(os.path.join(data_dir, filename))
-#     img = img.resize((64,64),Image.ANTIALIAS)
-#     dataset.append(np.array(img))
-#   return dataset
+def create_dataset_with_image(filelist,data_dir, N=10000, M=1000): # N is 10000 episodes, M is number of timesteps
+  # data = np.zeros((M*N, 64, 64, 3), dtype=np.uint8)
+  dataset = []
+  for i in range(len(filelist)):
+    filename = filelist[i]
+    img = Image.open(os.path.join(data_dir, filename))
+    img = img.resize((64,64),Image.ANTIALIAS)
+    dataset.append(np.array(img))
+  return dataset
 
 
-def create_dataset(filelist, N=10000, M=1000): # N is 10000 episodes, M is number of timesteps
+def create_dataset(filelist,arglist, N=10000, M=1000): # N is 10000 episodes, M is number of timesteps
   N = len(filelist)
   data = np.zeros((M*N, 64, 64, 3), dtype=np.uint8)
   idx = 0
   for i in range(N):
     filename = filelist[i]
-    raw_data = np.load(os.path.join("record", filename))['obs']
+    raw_data = np.load(os.path.join(arglist.data_dir, filename))['obs']
     l = len(raw_data)
     if (idx+l) > (M*N):
       data = data[0:idx]
@@ -90,7 +92,10 @@ if __name__ == '__main__':
     filelist.sort()
     filelist = filelist[0:10000]
     #print("check total number of images:", count_length_of_filelist(filelist))
-    dataset = create_dataset(filelist)
+    if arglist.use_image:
+      dataset = create_dataset_with_image(filelist, arglist.data_dir)
+    else:  
+      dataset = create_dataset(filelist, arglist)
 
     # split into batches:
     total_length = len(dataset)
@@ -125,8 +130,8 @@ if __name__ == '__main__':
         print("step", (train_step+1), train_loss, r_loss, kl_loss)
         log.write('{}\n'.format(','.join(map(str, 
                     [train_loss, r_loss, kl_loss, train_step]))))
-        if ((train_step+1) % 500 == 0):
-          vae.save_json(os.path.join(arglist.model_save_path,"/vae.json"))
+        if ((train_step+1) % arglist.save_period == 0):
+          vae.save_json(os.path.join(arglist.model_save_path,"vae.json"))
 
     # finished, final model:
-    vae.save_json(os.path.join(arglist.model_save_path,"/vae.json"))
+    vae.save_json(os.path.join(arglist.model_save_path,"vae.json"))
