@@ -48,7 +48,7 @@ class PongGame(Env):
 		
 
 	# define event handlers
-	def __init__(self):
+	def __init__(self, competitive):
 		self.viewer = None
 		self.paddle1, self.paddle2, self.reward = PongObject([HALF_PAD_WIDTH - 1,HEIGHT/2], 0), PongObject([WIDTH +1 - HALF_PAD_WIDTH,HEIGHT/2], 0), [0,0]
 		self.canvas = pygame.Surface((WIDTH, HEIGHT))
@@ -57,6 +57,7 @@ class PongGame(Env):
 		self.action_space = spaces.Box(low=-2,high=2, shape=(2,))
 		self.observation_space = spaces.Box(low=0, high=255, shape=(WIDTH, HEIGHT, 3))
 		self.scores = [0,0]
+		self.competitive = competitive
 		
 	
 	
@@ -152,7 +153,8 @@ class PongGame(Env):
 				#if the ball hit ones wall, add score 1 to player 2 
 				self.scores[1] += 1
 				self.goals[0] = True
-				self.reward[1] = 1
+				if self.competitive:
+					self.reward[1] = 1
 				self.reward[0] = -1
 			
 
@@ -168,13 +170,11 @@ class PongGame(Env):
 				# add score 1 to player 1
 				self.scores[0] +=1 
 				self.goals[1] = True
-				self.reward[0] = 1
+				if self.competitive:
+					self.reward[0] = 1
 				self.reward[1] = -1
 				
-
-		# self.reward  [self.scores[0]- self.scores[1], self.scores[1] - self.scores[0]]	
-		# if self.score[0] == 0 and self.score[1] == 0:
-		# 	self.reward = [0,-1] 
+		
 		self.screen = sarray.array3d(self.canvas)
 		dones = self.goals
 	
