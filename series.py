@@ -37,8 +37,7 @@ def parse_args():
     parser.add_argument("--kl_tolerance", type = float, default = 0.5, help = "dk divergence tolerance")
     parser.add_argument("--data_dir", type = str,default = "./image_data")
     parser.add_argument("--series_dir", type = str, default = "./series")
-    parser.add_argument("--model_save_path", type = str,default = "./tf_vae", help= "model save path")
-
+    parser.add_argument("--vae_path", type = str,default = "./tf_vae", help= "model save path")
     parser.add_argument("--z_size", type = int, default = 32, help = "z size")
     return parser.parse_args()
 
@@ -98,7 +97,7 @@ if __name__ == '__main__':
                   reuse=False,
                   gpu_mode=True) # use GPU on batchsize of 1000 -> much faster
 
-    vae.load_json(os.path.join(arglist.model_save_path, 'vae.json'))
+    vae.load_json(os.path.join(arglist.vae_path, 'vae.json'))
 
     mu_dataset = []
     logvar_dataset = []
