@@ -37,6 +37,7 @@ def parse_args():
     parser.add_argument("--use_model", type = bool, default = False, help = "use model")
     parser.add_argument("--model_path", type = str, default = "", help = "load model path")
     parser.add_argument("--recording_mode", type = bool, default = True, help = "training model")
+    parser.add_argument("--competitive", type = bool, default = False, help  = "competitive or cooperative")
     return parser.parse_args()
 
 
@@ -231,22 +232,26 @@ def simulate(model, arglist, train_mode=False, render_mode=False, num_episode=5,
       recording_logvar.append(logvar)
       recording_action.append(action)
 
-      #train player1 
-      obs, rewards, [act1, act2], done, info = model.env.step([action[0], 'script'])
+      if arglist.competitive:
+        obs, rewards, [act1, act2], goals, win = model.env.step([action[0], 'script'])
+      else: 
+        obs, rewards, [act1, act2], goals, win = model.env.step(action)
 
       extra_reward = 0.0 # penalize for turning too frequently
-      if train_mode and penalize_turning:
-        extra_reward -= np.abs(action[0])/10.0
-        rewards[0] += extra_reward
+      if self.competitive:
+        if train_mode and penalize_turning:
+          extra_reward -= np.abs(action[0])/10.0
+          rewards[0] += extra_reward
+        reward = rewards[0]
+      else:
+        if train_mode and penalize_turning:
+          reward = np.sum(rewards)
+          extra_reward -= np.abs(action[0])/10.0
+          reward += extra_reward
 
-      recording_reward.append(rewards[0])
-
-      #if (render_mode):
-      #  print("action", action, "step reward", reward)
-
-      total_reward += rewards[0]
-
-      if done:
+      recording_reward.append(reward)
+      total_reward += reward  
+      if win:
         break
 
     #for recording:
