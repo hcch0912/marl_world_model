@@ -35,25 +35,39 @@ def parse_args():
     parser.add_argument("--lr", type = float, default = 0.0001, help = "learning rate")
     parser.add_argument("--gamma", type = float, default = 0.99, help = "discount rate")
     parser.add_argument("--kl_tolerance", type = float, default = 0.5, help = "dk divergence tolerance")
-    parser.add_argument("--data_dir", type = str,default = "./image_data")
+    parser.add_argument("--data_dir", type = str,default = "./record")
     parser.add_argument("--series_dir", type = str, default = "./series")
     parser.add_argument("--vae_path", type = str,default = "./tf_vae", help= "model save path")
     parser.add_argument("--z_size", type = int, default = 32, help = "z size")
     return parser.parse_args()
 
 
-def load_raw_data_list(filelist, arglist):
+# def load_raw_data_list(filelist, arglist):
+#   data_list = []
+#   action_list = []
+#   counter = 0
+#   for i in range(len(filelist)):
+#     filename = filelist[i]
+#     string = re.sub('.png', '', filename)
+#     actions = re.split(r'_', string)[1:]
+#     img = Image.open(os.path.join(arglist.data_dir, filename))
+#     img = img.resize((64,64),Image.ANTIALIAS)
+#     data_list.append(np.array(img))
+#     action_list.append([float(actions[0]), float(actions[1])])
+#     if ((i+1) % 1000 == 0):
+#       print("loading file", (i+1))
+#   return data_list, action_list
+
+
+def load_raw_data_list(filelist,arglist):
   data_list = []
   action_list = []
   counter = 0
   for i in range(len(filelist)):
     filename = filelist[i]
-    string = re.sub('.png', '', filename)
-    actions = re.split(r'_', string)[1:]
-    img = Image.open(os.path.join(arglist.data_dir, filename))
-    img = img.resize((64,64),Image.ANTIALIAS)
-    data_list.append(np.array(img))
-    action_list.append([float(actions[0]), float(actions[1])])
+    raw_data = np.load(os.path.join(arglist.data_dir, filename))
+    data_list.append(raw_data['obs'])
+    action_list.append(raw_data['action'])
     if ((i+1) % 1000 == 0):
       print("loading file", (i+1))
   return data_list, action_list
