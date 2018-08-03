@@ -110,7 +110,7 @@ class Model:
 
   def make_env(self, seed=-1, render_mode=False, full_episode=False):
     self.render_mode = render_mode
-    self.env = PongGame()
+    self.env = PongGame(competitive = False)
 
   def reset(self):
     self.state = rnn_init_state(self.rnn)
@@ -206,8 +206,7 @@ def simulate(model, arglist, train_mode=False, render_mode=False, num_episode=5,
 
     obs = model.env.reset()
     # obs = Image.fromarray(obs)
-    obs = Image.fromarray(obs)
-    obs = obs.resize((64,64),Image.ANTIALIAS)
+    
     total_reward = 0.0
 
     random_generated_int = np.random.randint(2**31-1)
@@ -224,21 +223,24 @@ def simulate(model, arglist, train_mode=False, render_mode=False, num_episode=5,
         model.env.render("human")
       else:
         model.env.render('rgb_array')
-
+      obs = Image.fromarray(obs)
+      obs = obs.resize((64,64),Image.ANTIALIAS)
+      obs = np.array(obs)
       z, mu, logvar = model.encode_obs(obs)
       action = model.get_action(z)
 
       recording_mu.append(mu)
       recording_logvar.append(logvar)
       recording_action.append(action)
-
+      recording_reward = []
       if arglist.competitive:
         obs, rewards, [act1, act2], goals, win = model.env.step([action[0], 'script'])
       else: 
         obs, rewards, [act1, act2], goals, win = model.env.step(action)
 
       extra_reward = 0.0 # penalize for turning too frequently
-      if self.competitive:
+      reward = 0.
+      if arglist.competitive:
         if train_mode and penalize_turning:
           extra_reward -= np.abs(action[0])/10.0
           rewards[0] += extra_reward
