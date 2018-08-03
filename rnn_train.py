@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument("--lr", type = float, default = 0.0001, help = "learning rate")
     parser.add_argument("--gamma", type = float, default = 0.99, help = "discount rate")
     parser.add_argument("--kl_tolerance", type = float, default = 0.5, help = "dk divergence tolerance")
-    parser.add_argument("--data_dir", type = str,default = "./series/")
+    parser.add_argument("--data_dir", type = str,default = "./series")
     parser.add_argument("--model_save_path", type = str,default = "./tf_rnn/", help= "model save path")
     parser.add_argument("--z_size", type = int, default = 32, help = "z size")
     parser.add_argument("--initial_z_save_path", type = str, default = "tf_initial_z", help = "intial_z")
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     hps_sample = hps_model._replace(batch_size=1, max_seq_len=1, use_recurrent_dropout=0, is_training=0)
 
     raw_data = np.load(os.path.join(arglist.data_dir, "series.npz"))
-
+    #print(raw_data.shape)
     # load preprocessed data
     data_mu = raw_data["mu"]
     data_logvar = raw_data["logvar"]
@@ -95,7 +95,8 @@ if __name__ == '__main__':
 
     N_data = len(data_mu) # should be 10k
     batch_size = hps_model.batch_size
-
+    
+    print(data_mu.shape)
     # save 1000 initial mu and logvars:
     initial_mu = np.copy(data_mu[:1000, 0, :]*10000).astype(np.int).tolist()
     initial_logvar = np.copy(data_logvar[:1000, 0, :]*10000).astype(np.int).tolist()

@@ -63,6 +63,7 @@ def load_raw_data_list(filelist,arglist):
   data_list = []
   action_list = []
   counter = 0
+  print(len(filelist))
   for i in range(len(filelist)):
     filename = filelist[i]
     raw_data = np.load(os.path.join(arglist.data_dir, filename))
@@ -113,21 +114,22 @@ if __name__ == '__main__':
 
     vae.load_json(os.path.join(arglist.vae_path, 'vae.json'))
 
+    
     mu_dataset = []
     logvar_dataset = []
-    action_batch_set = []
-    num_batches = int(np.floor(len(dataset)/arglist.batch_size))
-    for i in range(num_batches):
-      data_batch = dataset[i*arglist.batch_size:(i+1)*arglist.batch_size]
+    for i in range(len(dataset)):
+      data_batch = dataset[i]
+      if len(data_batch) != arglist.batch_size:
+            break
       mu, logvar, z = encode_batch(data_batch, arglist)
       mu_dataset.append(mu.astype(np.float16))
       logvar_dataset.append(logvar.astype(np.float16))
       if ((i+1) % 100 == 0):
         print(i+1)
-      action_batch_set.append(action_dataset[i*arglist.batch_size:(i+1)*arglist.batch_size])
 
-    action_dataset = np.array(action_batch_set)
+    action_dataset = np.array(action_dataset)
     mu_dataset = np.array(mu_dataset)
     logvar_dataset = np.array(logvar_dataset)
+
 
     np.savez_compressed(os.path.join(arglist.series_dir, "series.npz"), action=action_dataset, mu=mu_dataset, logvar=logvar_dataset)
