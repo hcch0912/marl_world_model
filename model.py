@@ -5,13 +5,15 @@ import json
 import sys
 
 from two_player.pong import PongGame
+from prey_predator.env import PreyPredatorEnv
 import time
 import argparse
 from PIL import Image
 from vae.vae import ConvVAE
 from rnn.rnn import hps_sample, MDNRNN, rnn_init_state, rnn_next_state, rnn_output, rnn_output_size
-
-
+from util.make_env import *
+from util.pong_simulate import *
+from util.pp_simulate import * 
 
 def parse_args():
     parser = argparse.ArgumentParser("Reinforcement Learning experiments for stochastic games")
@@ -30,7 +32,7 @@ def parse_args():
     parser.add_argument("--lr", type = float, default = 0.0001, help = "learning rate")
     parser.add_argument("--gamma", type = float, default = 0.99, help = "discount rate")
     parser.add_argument("--kl_tolerance", type = float, default = 0.5, help = "dk divergence tolerance")
-    parser.add_argument("--data_dir", type = str,default = "./image_data")
+    parser.add_argument("--data_dir", type = str,default = "./record")
     parser.add_argument("--model_save_path", type = str,default = "./tf_vae", help= "model save path")
     parser.add_argument("--z_size", type = int, default = 32, help = "z size")
     parser.add_argument("--render_mode", type = bool, default = False, help = "render mode")
@@ -38,10 +40,10 @@ def parse_args():
     parser.add_argument("--model_path", type = str, default = "", help = "load model path")
     parser.add_argument("--recording_mode", type = bool, default = True, help = "training model")
     parser.add_argument("--competitive", type = bool, default = False, help  = "competitive or cooperative")
+    parser.add_argument("--train_mode", type =  bool, default = False, help = "train mode")
+    parser.add_argument("--simu_episode", type = int, default = 5, help = "simulate how many episodes")
     return parser.parse_args()
 
-
-render_mode = True
 
 # controls whether we concatenate (z, c, h), etc for features used for car.
 MODE_ZCH = 0
@@ -52,10 +54,7 @@ MODE_ZH = 4
 
 EXP_MODE = MODE_ZH
 
-def make_model(load_model=True):
-  # can be extended in the future.
-  model = Model(load_model=load_model)
-  return model
+
 
 def sigmoid(x):
   return 1 / (1 + np.exp(-x))
@@ -79,7 +78,7 @@ def sample(p):
 class Model:
   ''' simple one layer model for car racing '''
   def __init__(self, load_model=True):
-    self.env_name = "Pong-2p-v0"
+   
     self.vae = ConvVAE(batch_size=1, gpu_mode=False, is_training=False, reuse=True)
 
     self.rnn = MDNRNN(hps_sample, gpu_mode=False, reuse=True)
@@ -105,12 +104,6 @@ class Model:
       self.weight = np.random.randn(self.input_size, 2)
       self.bias = np.random.randn(2)
       self.param_count = (self.input_size)*2+2
-
-    self.render_mode = False
-
-  def make_env(self, seed=-1, render_mode=False, full_episode=False):
-    self.render_mode = render_mode
-    self.env = PongGame(competitive = False)
 
   def reset(self):
     self.state = rnn_init_state(self.rnn)
@@ -140,11 +133,8 @@ class Model:
       action = np.tanh(np.dot(h, self.weight_output) + self.bias_output)
     else:
       action = np.tanh(np.dot(h, self.weight) + self.bias)
-    
-
     action[0] = clip(action[0])
     action[1] = clip(action[1])
-
     self.state = rnn_next_state(self.rnn, z, action, self.state)
 
     return action
@@ -183,135 +173,54 @@ class Model:
     rnn_params = self.rnn.get_random_model_params(stdev=stdev)
     self.rnn.set_model_params(rnn_params)
 
-def simulate(model, arglist, train_mode=False, render_mode=False, num_episode=5, seed=-1, max_len=-1):
-
-  reward_list = []
-  t_list = []
-
-  max_episode_length = 1000
-
-  penalize_turning = False
-
-  if train_mode and max_len > 0:
-    max_episode_length = max_len
-
-  if (seed >= 0):
-    random.seed(seed)
-    np.random.seed(seed)
-    model.env.seed(seed)
-
-  for episode in range(num_episode):
-
-    model.reset()
-
-    obs = model.env.reset()
-    # obs = Image.fromarray(obs)
-    
-    total_reward = 0.0
-
-    random_generated_int = np.random.randint(2**31-1)
-
-    filename = "./record/"+str(random_generated_int)+".npz"
-    recording_mu = []
-    recording_logvar = []
-    recording_action = []
-    recording_reward = [0]
-
-    for t in range(max_episode_length):
-
-      if render_mode:
-        model.env.render("human")
-      else:
-        model.env.render('rgb_array')
-      obs = Image.fromarray(obs)
-      obs = obs.resize((64,64),Image.ANTIALIAS)
-      obs = np.array(obs)
-      z, mu, logvar = model.encode_obs(obs)
-      action = model.get_action(z)
-
-      recording_mu.append(mu)
-      recording_logvar.append(logvar)
-      recording_action.append(action)
-      recording_reward = []
-      if arglist.competitive:
-        obs, rewards, [act1, act2], goals, win = model.env.step([action[0], 'script'])
-      else: 
-        obs, rewards, [act1, act2], goals, win = model.env.step(action)
-
-      extra_reward = 0.0 # penalize for turning too frequently
-      reward = 0.
-      if arglist.competitive:
-        if train_mode and penalize_turning:
-          extra_reward -= np.abs(action[0])/10.0
-          rewards[0] += extra_reward
-        reward = rewards[0]
-      else:
-        if train_mode and penalize_turning:
-          reward = np.sum(rewards)
-          extra_reward -= np.abs(action[0])/10.0
-          reward += extra_reward
-
-      recording_reward.append(reward)
-      total_reward += reward  
-      if win:
-        break
-
-    #for recording:
-     # obs = Image.fromarray(obs)
-    obs = Image.fromarray(obs)
-    obs = obs.resize((64,64),Image.ANTIALIAS)
-    z, mu, logvar = model.encode_obs(obs)
-    action = model.get_action(z)
-    recording_mu.append(mu)
-    recording_logvar.append(logvar)
-    recording_action.append(action)
-
-    recording_mu = np.array(recording_mu, dtype=np.float16)
-    recording_logvar = np.array(recording_logvar, dtype=np.float16)
-    recording_action = np.array(recording_action, dtype=np.float16)
-    recording_reward = np.array(recording_reward, dtype=np.float16)
-
-    if not render_mode:
-      if arglist.recording_mode:
-        np.savez_compressed(filename, mu=recording_mu, logvar=recording_logvar, action=recording_action, reward=recording_reward)
-
-    if render_mode:
-      print("total reward", total_reward, "timesteps", t)
-    reward_list.append(total_reward)
-    t_list.append(t)
-
-  return reward_list, t_list
+def make_model(model_path = None, load_model=True):
+  # can be extended in the future.
+  model = Model( load_model=load_model)
+  if load_model:
+     model.load_model(model_path)
+  else:
+     model.init_random_model_params(stdev=np.random.rand()*0.01)
+  return model
 
 def main():
   arglist = parse_args()
-
-  if (arglist.use_model):
-    model = make_model()
-    print('model size', model.param_count)
-    model.make_env(render_mode=arglist.render_mode)
-    model.load_model(arglist.model_path)
-  else:
-    model = make_model(load_model=False)
-    print('model size', model.param_count)
-    model.make_env(render_mode=arglist.render_mode)
-    model.init_random_model_params(stdev=np.random.rand()*0.01)
-
   N_episode = arglist.episodes
   if arglist.render_mode:
-    N_episode = 1
+      N_episode = 1
   reward_list = []
-  for i in range(N_episode):
+  prey_reward_list = []
+  predator_reward_list = []
+  if arglist.game == "Pong-2p-v0":
+    model = make_model(model_path =arglist.model_path,load_model = arglist.use_model)  
+    print('model size', model.param_count)
+    env = make_env(arglist.game, arglist.competitive)
+    for i in range(N_episode):
+      reward, steps_taken = pong_simulate(model, env, arglist)
+      if arglist.render_mode:
+        print("terminal reward", reward, "average steps taken", np.mean(steps_taken)+1)
+      else:
+        pass
+      reward_list.append(reward[0])
+    if not arglist.render_mode:
+      print("seed", arglist.seed, "average_reward", np.mean(reward_list), "stdev", np.std(reward_list))
 
-    reward, steps_taken = simulate(model, arglist,
-      train_mode=False, render_mode=arglist.render_mode, num_episode=1)
-    if arglist.render_mode:
-      print("terminal reward", reward, "average steps taken", np.mean(steps_taken)+1)
-    else:
-      # print(reward[0])
-      pass
-    reward_list.append(reward[0])
-  if not arglist.render_mode:
-    print("seed", arglist.seed, "average_reward", np.mean(reward_list), "stdev", np.std(reward_list))
+  if arglist.game =="prey_predator":
+    prey_model = make_model(model_path =arglist.model_path ,load_model = arglist.use_model)  
+    predator_model = make_model(model_path = arglist.model_path, load_model = arglist.use_model)
+    print('model size', prey_model.param_count, predator_model.param_count )
+    env = make_env(arglist.game, None)
+    for i in range(N_episode):
+    	prey_reward, predator_reward, steps_taken = pp_simulate([prey_model, predator_model], env, arglist)
+    	if arglist.render_mode:
+    		print("terminal reward", rewards, "average steps taken", np.mean(steps_taken)+1)
+    	else:
+    		pass
+    	prey_reward_list.append(prey_reward)
+    	predator_reward_list.append(predator_reward)
+    if not arglist.render_mode:
+    	print("Seed", arglist.seed, 
+    		"prey average_reward", np.mean(prey_reward_list),
+    	 	"predator average_reward", np.mean(predator_reward_list))			
 
 if __name__ == "__main__":
   main()

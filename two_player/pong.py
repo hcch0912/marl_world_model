@@ -10,7 +10,6 @@ import pygame.surfarray as sarray
 import numpy as np
 from gym import Env, spaces
 pygame.init()
-
 #colors
 WHITE = (255,255,255)
 RED = (255,0,0)
@@ -59,7 +58,6 @@ class PongGame(Env):
 		self.scores = [0,0]
 		self.competitive = competitive
 		
-	
 	
 	def seed(self, seed=None):
 		self.rng.seed(seed)
@@ -174,7 +172,7 @@ class PongGame(Env):
 					self.reward[0] = 1
 				self.reward[1] = -1
 				
-		
+
 		self.screen = sarray.array3d(self.canvas)
 		dones = self.goals
 	
