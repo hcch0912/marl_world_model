@@ -71,9 +71,7 @@ class PreyPredatorEnv():
 			self.prey[i].accelerate(actions[0])
 		for i in range(self.predator_num):
 			self.predator[i].accelerate(actions[1+i])
-		print(self.prey[0].vel)
-		print(self.predator[1].vel)
-		print(self.predator[2].vel)
+	
 		self.canvas.fill(BLACK)
 		for i in range(self.prey_num):
 			pygame.draw.circle(self.canvas, GREEN, [*map(int,self.prey[i].pos)], ACTOR_RADIUS, 0)		
@@ -146,18 +144,19 @@ class PreyPredatorEnv():
 		up = int(h +half_raduis)
 		down = int(h -half_raduis)
 		
-		if left < 0:
+		if left <= 0:
 			left = 0 
 			right = self.view_size
-		if right > self.screen_size:
+		if right >= self.screen_size:
 			left = int(self.screen_size - self.view_size)
 			right = self.screen_size 
-		if up >self.screen_size :
+		if up >=self.screen_size :
 			up = self.screen_size 
 			down = int(self.screen_size - self.view_size)
-		if down < 0:
+		if down <= 0:
 			down = 0 
 			up = self.view_size
+	
 		assert right -left ==self.view_size
 		assert up -down == self.view_size
 		return np.array([two[down:up] for two in self.screen[left:right]])
