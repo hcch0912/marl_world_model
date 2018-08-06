@@ -71,7 +71,9 @@ class PreyPredatorEnv():
 			self.prey[i].accelerate(actions[0])
 		for i in range(self.predator_num):
 			self.predator[i].accelerate(actions[1+i])
-
+		print(self.prey[0].vel)
+		print(self.predator[1].vel)
+		print(self.predator[2].vel)
 		self.canvas.fill(BLACK)
 		for i in range(self.prey_num):
 			pygame.draw.circle(self.canvas, GREEN, [*map(int,self.prey[i].pos)], ACTOR_RADIUS, 0)		
@@ -80,8 +82,8 @@ class PreyPredatorEnv():
 			
 		#update positions
 		for i in range(self.prey_num):
-			self.prey[i].pos[0]+= int(self.prey[i].vel[0])
-			self.prey[i].pos[1]+= int(self.prey[i].vel[1])
+			self.prey[i].pos[0]+= self.prey[i].vel[0]
+			self.prey[i].pos[1]+= self.prey[i].vel[1]
 			if self.prey[i].pos[0] > CUBE_SIZE :
 				self.prey[i].pos[0] =  2 * CUBE_SIZE - self.prey[i].pos[0] 
 			if self.prey[i].pos[0] < 0:
@@ -124,8 +126,7 @@ class PreyPredatorEnv():
 			self.reward = [-1,1,1,1,1]
 			self.done = True
 
-		
-
+	
 		# for each actor, return a 100 x 100 cube observation, POMAP
 		# obs shape 5 x 100 x 100 
 		obs = []
@@ -159,8 +160,8 @@ class PreyPredatorEnv():
 			up = self.view_size
 		assert right -left ==self.view_size
 		assert up -down == self.view_size
-
 		return np.array([two[down:up] for two in self.screen[left:right]])
+
 	def render(self,mode='human',close=False, image = None):
 		if close:
 			if self.viewer is not None:
@@ -173,8 +174,9 @@ class PreyPredatorEnv():
 			from gym.envs.classic_control import rendering
 			if self.viewer is None:
 				self.viewer = rendering.SimpleImageViewer()
-			if  len(image) >0 :
-				self.viewer.imshow(image)
+			if image :
+
+				self.viewer.imshow(self.screen)
 			else:		
 				self.viewer.imshow(self.screen)			
 

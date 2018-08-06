@@ -30,7 +30,7 @@ def pp_simulate(model, env, arglist, seed=-1, max_len=-1):
   penalize_turning = False
 
   if arglist.train_mode and max_len > 0:
-    max_episode_length = max_len
+      max_episode_length = max_len
 
   if (seed >= 0):
     random.seed(seed)
@@ -56,9 +56,10 @@ def pp_simulate(model, env, arglist, seed=-1, max_len=-1):
     for t in range(max_episode_length):
 
       if arglist.render_mode:
-        env.render("human")
+        env.render("human", image = obs)
+      
       else:
-        env.render('rgb_array')
+        env.render('rgb_array', image =  obs)
 
       obs = [Image.fromarray(o) for o in obs]
       obs = [o.resize((64,64),Image.ANTIALIAS) for o in obs]

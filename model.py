@@ -64,7 +64,7 @@ def sigmoid(x):
 def relu(x):
   return np.maximum(x, 0)
 
-def clip(x, lo=-2, hi=2):
+def clip(x, lo=-5, hi=5):
   return np.minimum(np.maximum(x, lo), hi)
 
 def passthru(x):
@@ -138,7 +138,8 @@ class Model:
     action[0] = clip(action[0])
     action[1] = clip(action[1])
     self.state = rnn_next_state(self.rnn, z, action, self.state)
-
+    if np.random.uniform(0,1) < 0.2:
+    	action = [np.random.uniform(-2,2),np.random.uniform(-2,2) ]
     return action
 
   def set_model_params(self, model_params):
@@ -214,7 +215,7 @@ def main():
     for i in range(N_episode):
     	prey_reward, predator_reward, steps_taken = pp_simulate([prey_model, predator_model], env, arglist)
     	if arglist.render_mode:
-    		print("terminal reward", rewards, "average steps taken", np.mean(steps_taken)+1)
+    		print("terminal reward", prey_reward, predator_reward, "average steps taken", np.mean(steps_taken)+1)
     	else:
     		pass
     	prey_reward_list.append(prey_reward)
