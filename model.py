@@ -42,6 +42,8 @@ def parse_args():
     parser.add_argument("--competitive", type = bool, default = False, help  = "competitive or cooperative")
     parser.add_argument("--train_mode", type =  bool, default = False, help = "train mode")
     parser.add_argument("--simu_episode", type = int, default = 5, help = "simulate how many episodes")
+    parser.add_argument("--screen_size", type = int, default = 200, help = "game screen size")
+    parser.add_argument("--view_size", type = int, default = 100, help = "POMDP, partial obs size")
     return parser.parse_args()
 
 
@@ -193,7 +195,7 @@ def main():
   if arglist.game == "Pong-2p-v0":
     model = make_model(model_path =arglist.model_path,load_model = arglist.use_model)  
     print('model size', model.param_count)
-    env = make_env(arglist.game, arglist.competitive)
+    env = make_env(arglist)
     for i in range(N_episode):
       reward, steps_taken = pong_simulate(model, env, arglist)
       if arglist.render_mode:
@@ -208,7 +210,7 @@ def main():
     prey_model = make_model(model_path =arglist.model_path ,load_model = arglist.use_model)  
     predator_model = make_model(model_path = arglist.model_path, load_model = arglist.use_model)
     print('model size', prey_model.param_count, predator_model.param_count )
-    env = make_env(arglist.game, None)
+    env = make_env(arglist)
     for i in range(N_episode):
     	prey_reward, predator_reward, steps_taken = pp_simulate([prey_model, predator_model], env, arglist)
     	if arglist.render_mode:

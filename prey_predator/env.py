@@ -31,11 +31,11 @@ class Actor:
 			
 
 class PreyPredatorEnv():
-	def __init__(self, prey_num = 1, predator_num = 4 ):
+	def __init__(self,screen_size = 200,  view_size = 100, prey_num = 1, predator_num = 4 ):
 		self.viewer = None
 		self.canvas = pygame.Surface((CUBE_SIZE, CUBE_SIZE))
 		self.screen = sarray.array3d(self.canvas)
-		self.size = 200
+		self.screen_size = 200
 		self.prey_num = 1
 		self.predator_num = predator_num
 		self.prey = []
@@ -44,18 +44,20 @@ class PreyPredatorEnv():
 		self.prey_reward = []
 		self.predator_reward = []
 		self.rng = np.random.RandomState()
+		self.view_size = view_size
+		self.screen_size = screen_size
 		for i in range(prey_num):
-			self.prey.append(Actor(role = "prey_{}".format(i), pos = [np.random.randint(-self.size, self.size), np.random.randint(-self.size, self.size)], vel = [0,0]))
+			self.prey.append(Actor(role = "prey_{}".format(i), pos = [np.random.randint(0, self.screen_size), np.random.randint(0, self.screen_size)], vel = [0,0]))
 		for i in range(predator_num):
-			self.predator.append(Actor(role = "predator_{}".format(i), pos = [np.random.randint(-self.size, self.size), np.random.randint(-self.size, self.size)], vel =  [0,0]))	
+			self.predator.append(Actor(role = "predator_{}".format(i), pos = [np.random.randint(0, self.screen_size), np.random.randint(0, self.screen_size)], vel =  [0,0]))	
 
 	def seed(self, seed=None):
 		self.rng.seed(seed)
 	def reset(self):
 		for i in range(self.prey_num):
-			self.prey.append(Actor("prey_{}".format(i), [np.random.randint(-self.size, self.size), np.random.randint(-self.size, self.size)], [0,0]))
+			self.prey.append(Actor("prey_{}".format(i), [np.random.randint(0, self.screen_size), np.random.randint(0, self.screen_size)], [0,0]))
 		for i in range(self.predator_num):
-			self.prey.append(Actor("predator_{}".format(i), [np.random.randint(-self.size, self.size), np.random.randint(-self.size, self.size)], [0,0]))
+			self.prey.append(Actor("predator_{}".format(i), [np.random.randint(0, self.screen_size), np.random.randint(0, self.screen_size)], [0,0]))
 		obs = []
 		for i in range(self.prey_num):
 			obs.append(self.get_obs(self.prey[i]))
@@ -137,24 +139,26 @@ class PreyPredatorEnv():
 	def get_obs(self, actor):
 		w = actor.pos[0]
 		h = actor.pos[1]
-		left = w-50
-		right = w +50
-		up = h +50
-		down = h -50
+		half_raduis = self.view_size  /2
+		left = int(w- half_raduis)
+		right = int(w +half_raduis)
+		up = int(h +half_raduis)
+		down = int(h -half_raduis)
+		
 		if left < 0:
 			left = 0 
-			right = 100
-		if right > 200:
-			left = 100
-			right = 200
-		if up >200:
-			up = 200
-			down = 100
+			right = self.view_size
+		if right > self.screen_size:
+			left = int(self.screen_size - self.view_size)
+			right = self.screen_size 
+		if up >self.screen_size :
+			up = self.screen_size 
+			down = int(self.screen_size - self.view_size)
 		if down < 0:
 			down = 0 
-			up = 100
-		assert right -left ==100
-		assert up -down == 100	
+			up = self.view_size
+		assert right -left ==self.view_size
+		assert up -down == self.view_size
 
 		return np.array([two[down:up] for two in self.screen[left:right]])
 	def render(self,mode='human',close=False, image = None):

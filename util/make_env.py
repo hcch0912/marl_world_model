@@ -3,8 +3,8 @@ from prey_predator.env import PreyPredatorEnv
 
 
 
-def make_env(env_name,competitive,  seed=-1, render_mode=False, full_episode=False):
-    if env_name == "Pong-2p-v0":
-      return PongGame(competitive = competitive)
-    if env_name == "prey_predator":
-      return PreyPredatorEnv()  
+def make_env(arglist,  seed=-1, render_mode=False, full_episode=False):
+    if arglist.game == "Pong-2p-v0":
+      return PongGame(competitive = arglist.competitive)
+    if arglist.game == "prey_predator":
+      return PreyPredatorEnv( view_size = arglist.view_size )  

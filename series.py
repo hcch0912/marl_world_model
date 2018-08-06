@@ -96,7 +96,7 @@ if __name__ == '__main__':
     if not os.path.exists(arglist.series_dir):
         os.makedirs(arglist.series_dir)
 
-    filelist = os.listdir(arglist.data_dir)
+    filelist = os.listdir(os.path.join(arglist.data_dir, 'prey') )
     filelist.sort()
     filelist = filelist[0:10000]
 
@@ -112,7 +112,7 @@ if __name__ == '__main__':
                   reuse=False,
                   gpu_mode=True) # use GPU on batchsize of 1000 -> much faster
 
-    vae.load_json(os.path.join(arglist.vae_path, 'vae.json'))
+    vae.load_json(os.path.join(arglist.vae_path, arglist.game,'vae.json'))
 
     
     mu_dataset = []

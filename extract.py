@@ -37,6 +37,8 @@ def parse_args():
     parser.add_argument("--model_path", type = str, default = "", help = "path to load the model")
     parser.add_argument("--use_model", type = bool, default = False, help = "use model")
     parser.add_argument("--competitive", type = bool, default = False, help  = "competitive or cooperative")
+    parser.add_argument("--screen_size", type = int, default = 200, help = "game screen size")
+    parser.add_argument("--view_size", type = int, default = 100, help = "POMDP, partial obs size")
     return parser.parse_args()
 
 
@@ -51,7 +53,7 @@ if __name__ == '__main__':
     if arglist.game == "Pong-2p-v0":
       model = make_model(model_path =arglist.model_path,load_model = arglist.use_model)  
       
-      env = make_env(arglist.game, arglist.competitive, full_episode=True)
+      env = make_env(arglist, full_episode=True)
       model.render_mode=arglist.render_mode
       for trial in range(arglist.max_trials): # 200 trials per worker
         try:
@@ -90,7 +92,7 @@ if __name__ == '__main__':
         except gym.error.Error:
           print("stupid gym error, life goes on")
           env.close()
-          make_env(arglist.game, arglist.competitive, render_mode=arglist.render_mode)
+          make_env(arglist,  render_mode=arglist.render_mode)
           continue      
       env.close()
 
@@ -98,7 +100,7 @@ if __name__ == '__main__':
            
           prey_model = make_model(model_path =arglist.model_path ,load_model = arglist.use_model)  
           predator_model = make_model(model_path = arglist.model_path, load_model = arglist.use_model)
-          env = make_env(arglist.game, None)
+          env = make_env(arglist)
           for trial in range(arglist.max_trials): # 200 trials per worker
             try:
               random_generated_int = random.randint(0, 2**31-1)
@@ -147,7 +149,7 @@ if __name__ == '__main__':
             except gym.error.Error:
               print("stupid gym error, life goes on")
               env.close()
-              make_env(arglist.game, None, render_mode=arglist.render_mode)
+              make_env(arglist, render_mode=arglist.render_mode)
               continue      
           env.close()     
 

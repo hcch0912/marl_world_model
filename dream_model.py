@@ -36,6 +36,8 @@ def parse_args():
     parser.add_argument("--render_mode", type = bool, default = False, help = "render with display")
     parser.add_argument("--exp_mode", type = str, default = "zh", help = "choose the features to concatenate, ['zch','zc','z','z_hidden','zh' ]")
     parser.add_argument("--use_model", type = bool, default = False, help = "use pretrained model or not")
+    parser,add_argument("--rnn_file", type = str, default = './tf_rnn/rnn.json', help = "rnn model path")
+    parser.add_argument("--vae_file", type = str, default = './tf_vae/vae.json',help = "vae model path")
     return parser.parse_args()
 
 
@@ -51,9 +53,9 @@ MODE_ZH = 4
 
 EXP_MODE = MODE_ZH
 
-def make_model(load_model=True):
+def make_model(arglist,load_model=True):
   # can be extended in the future.
-  model = Model(load_model=load_model)
+  model = Model(arglist,load_model=load_model)
   return model
 
 def sigmoid(x):
@@ -77,15 +79,15 @@ def sample(p):
 
 class Model:
   ''' simple one layer model for car racing '''
-  def __init__(self, load_model=True):
-    self.env_name = "pong"
+  def __init__(self,arglist,load_model=True):
+    self.env_name = arglist.game
     self.vae = ConvVAE(batch_size=1, gpu_mode=False, is_training=False, reuse=True)
 
     self.rnn = MDNRNN(hps_sample, gpu_mode=False, reuse=True)
 
     if load_model:
-      self.vae.load_json('./tf_vae/vae.json')
-      self.rnn.load_json('./tf_rnn/rnn.json')
+      self.vae.load_json(arglist.vae_file)
+      self.rnn.load_json(arglist.rnn_file)
 
     self.state = rnn_init_state(self.rnn)
     self.rnn_mode = True
@@ -106,10 +108,6 @@ class Model:
       self.param_count = (self.input_size)*2+2
 
     self.render_mode = False
-
-  def make_env(self, seed=-1, render_mode=False):
-    self.render_mode = render_mode
-    self.env = make_env(self.env_name, agent=self, seed=seed)
 
   def reset(self):
     self.state = rnn_init_state(self.rnn)
@@ -227,10 +225,10 @@ def main():
   # assert len(sys.argv) > 0, 'python model.py path_to_model.json'
   arglist = parse_args()
 
-  model = make_model()
+  model = make_model(arglist)
   print('model size', model.param_count)
 
-  model.make_env(render_mode=arglist.render_mode, seed = arglist.seed)
+  model.make_env(arglist)
 
   if arglist.use_model:
     model.load_model(arglist.filename)

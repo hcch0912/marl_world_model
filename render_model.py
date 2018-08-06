@@ -1,17 +1,13 @@
 
 import numpy as np
 import random
-
 import json
 import sys
-
-#from scipy.misc import imresize as resize, imsave
-
 from render_env import make_env
 import time
-
 from vae.vae import ConvVAE
 from rnn.rnn import hps_sample, MDNRNN, rnn_init_state, rnn_next_state, rnn_output, rnn_output_size
+
 
 import argparse
 def parse_args():
@@ -40,6 +36,8 @@ def parse_args():
     parser.add_argument("--recording_mode", type = bool, default = True, help = "training model")
     parser.add_argument("--competitive", type = bool, default = False, help  = "competitive or cooperative")
     parser.add_argument("--train_mode",type = bool, default = False, help = "train")
+    parser,add_argument("--rnn_file", type = str, default = './tf_rnn/rnn.json', help = "rnn model path")
+    parser.add_argument("--vae_file", type = str, default = './tf_vae/vae.json',help = "vae model path")
     return parser.parse_args()
 
 
@@ -55,9 +53,9 @@ MODE_ZH = 4
 
 EXP_MODE = MODE_ZH
 
-def make_model():
+def make_model(arglist):
   # can be extended in the future.
-  model = Model()
+  model = Model(arglist)
   return model
 
 def sigmoid(x):
@@ -81,12 +79,12 @@ def sample(p):
 
 class Model:
   ''' simple one layer model for car racing '''
-  def __init__(self):
-    self.env_name = "Pond-2d-v0"
+  def __init__(self, arglist):
+    self.env_name = arglist.game
     self.vae = ConvVAE(batch_size=1, gpu_mode=False, is_training=False, reuse=True)
-    self.vae.load_json('./tf_vae/vae.json')
+    self.vae.load_json(arglist.vae_file)
     self.rnn = MDNRNN(hps_sample, gpu_mode=False, reuse=True)
-    self.rnn.load_json('./tf_rnn/rnn.json')
+    self.rnn.load_json(arglist.rnn_file)
     self.state = rnn_init_state(self.rnn)
     self.rnn_mode = True
 
@@ -310,7 +308,7 @@ def main():
   arglist = parse_args()
 
 
-  model = make_model()
+  model = make_model(arglist)
   print('model size', model.param_count)
 
   model.make_env(render_mode=arglist.render_mode)

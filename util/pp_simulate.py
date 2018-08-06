@@ -12,7 +12,6 @@ import argparse
 from PIL import Image
 from vae.vae import ConvVAE
 from rnn.rnn import hps_sample, MDNRNN, rnn_init_state, rnn_next_state, rnn_output, rnn_output_size
-from util.make_env import *
 import os
 
 def pp_simulate(model, env, arglist, seed=-1, max_len=-1):

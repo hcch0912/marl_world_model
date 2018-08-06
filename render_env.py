@@ -54,8 +54,46 @@ class PongWrapper(PongGame):
 
     return super(PongWrapper, self).render(mode=mode, image = img, close=close)
 
+
+
+class PPWrapper(PreyPredatorEnv):
+  def __init__(self):
+    super(PPWrapper, self).__init__()
+    self.observation_space = Box(low = 0, high = 255, shape=(SCREEN_X, SCREEN_Y, 3))
+    self.custom_viewer = None
+    self.frame_count = 0
+    self.current_frame = None
+    self.vae_frame = None
+  def step(self, action):
+    obs, reward, done, _ = super(PPWrapper, self).step(action)
+    self.current_frame = _process_frame(obs)
+    return self.current_frame, reward, win, {}
+  def render(self, mode = 'human', close = False):
+    if mode == "state_pixels":
+      return super(PPWrapper, self).render_mode("state_pixels")
+    img_orig = self.current_frame
+
+    img_vae = self.vae_frame
+
+    img = np.concatenate((img_orig, img_vae), axis=1)
+
+    img = resize(img, (int(np.round(SCREEN_Y*FACTOR)), int(np.round(SCREEN_X*FACTOR))*2))
+    if self.frame_count > 0:
+      pass
+      #toimage(img, cmin=0, cmax=255).save('output/'+str(self.frame_count)+'.png')
+    self.frame_count += 1
+    return super(PPWrapper, self).render(mode = mode, image = img, close= close)
+  def make_env(env)  :
+    env = PreyPredatorEnv()
+    if (seed >=0):
+      env.seed(seed)
+    return env  
+
 def make_env(env_name, seed=-1, render_mode=False):
-  env = PongWrapper()
+  if env_name == "Pong-2p-v0":
+    env = PongWrapper()
+  if env_name == "prey_predator":
+    env = PPWrapper()  
   if (seed >= 0):
     env.seed(seed)
   '''
@@ -68,3 +106,5 @@ def make_env(env_name, seed=-1, render_mode=False):
   assert False
   '''
   return env
+
+    
